@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use Illuminate\Validation\Rule;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
+use Illuminate\Http\Request;
 
 class ProjectController extends Controller
 {
@@ -38,7 +40,11 @@ class ProjectController extends Controller
      */
     public function store(StoreProjectRequest $request)
     {
-        //
+        $validated_data = $this->validation($request);
+
+        $newProject = Project::create($validated_data);
+
+        return to_route('projects.show', $newProject);
     }
 
     /**
@@ -72,7 +78,11 @@ class ProjectController extends Controller
      */
     public function update(UpdateProjectRequest $request, Project $project)
     {
-        //
+        $validated_data = $this->validation($request);
+
+        $project->update($validated_data);
+
+        return to_route('projects.show');
     }
 
     /**
@@ -86,5 +96,16 @@ class ProjectController extends Controller
         $project->delete();
 
         return to_route('projects.index');
+    }
+
+    public function validation(Request $request)
+    {
+        return $request->validate([
+            'title' => 'required|string|max:100|min:3|',
+            'description' => 'nullable|string|',
+            'client_name' => 'nullable|string|',
+            'project_url' => 'required|max:255|url|',
+            'project_date' => 'required|date|',
+        ]);
     }
 }
