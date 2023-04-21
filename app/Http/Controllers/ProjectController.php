@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
-use Illuminate\Validation\Rule;
+use Illuminate\Http\Request;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
-use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ProjectController extends Controller
 {
@@ -15,11 +15,24 @@ class ProjectController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $projects = Project::all();
 
-        return view('projects.index', compact('projects'));
+        $trashed_data = $request->input('trashed');
+
+        if ($trashed_data) {
+
+            $projects = Project::onlyTrashed()->get();
+        } else {
+
+            $projects = Project::all();
+        }
+
+        $trashed_num = Project::onlyTrashed()->get()->count();
+
+        // dd($trashed_num);
+
+        return view('projects.index', compact('projects', 'trashed_num'));
     }
 
     /**
@@ -40,7 +53,10 @@ class ProjectController extends Controller
      */
     public function store(StoreProjectRequest $request)
     {
-        $validated_data = $this->validation($request);
+
+        $validated_data = $request->validated();
+
+        $validated_data['slug'] = Str::slug($validated_data['title']);
 
         $newProject = Project::create($validated_data);
 
@@ -78,11 +94,27 @@ class ProjectController extends Controller
      */
     public function update(UpdateProjectRequest $request, Project $project)
     {
-        $validated_data = $this->validation($request);
+        $validated_data = $request->validated();
+
+        if ($validated_data['title'] !== $project->title) {
+            $validated_data['slug'] = Str::slug($validated_data['title']);
+        }
 
         $project->update($validated_data);
 
-        return to_route('projects.show');
+        return to_route('projects.show', $project);
+    }
+
+    public function restore(Project $project)
+    {
+        if ($project->trashed()) {
+
+            $project->restore();
+
+            request()->session()->flash('restore_message', 'The project: ' . $project->title . ' is successfully restored');
+        }
+
+        return back();
     }
 
     /**
@@ -93,19 +125,18 @@ class ProjectController extends Controller
      */
     public function destroy(Project $project)
     {
-        $project->delete();
+        if ($project->trashed()) {
+
+            $project->forceDelete();
+
+            request()->session()->flash('full_delete_message', 'The project: ' . $project->title . ' has been fully deleted');
+        } else {
+
+            $project->delete();
+
+            request()->session()->flash('delete_message', 'The project: ' . $project->title . ' has been moved to the bin');
+        }
 
         return to_route('projects.index');
-    }
-
-    public function validation(Request $request)
-    {
-        return $request->validate([
-            'title' => 'required|string|max:100|min:3|',
-            'description' => 'nullable|string|',
-            'client_name' => 'nullable|string|',
-            'project_url' => 'required|max:255|url|',
-            'project_date' => 'required|date|',
-        ]);
     }
 }

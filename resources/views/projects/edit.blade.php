@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
+<div class="container pt-5">
 
     <div class="container">
         <h1>Edit {{$project->title}}</h1>
@@ -52,7 +52,7 @@
                 @enderror
             </div>
 
-            <button type="submit" class="btn btn-primary">Save new Project</button>
+            <button type="submit" class="btn btn-primary">Save edited Project</button>
 
         </form>
 

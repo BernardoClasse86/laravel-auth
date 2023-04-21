@@ -33,7 +33,24 @@
             </div>
 
             <div class="my-row edit">
+
                 <a href="{{route('projects.edit', $project)}}" class="btn btn-sm btn-warning">Edit Project</a>
+
+                @if($project->trashed())
+                    <form action="{{ route('projects.restore', $project) }}" method="POST">
+                    @csrf
+                        <input class="btn btn-sm btn-success" type="submit" value="Ripristina">
+                    </form>
+                @endif
+
+            </div>
+
+            <div class="my-row mt-3">
+                <form action="{{route('projects.destroy', $project)}}" method="POST">
+                    @csrf
+                    @method('DELETE')
+                    <input class="btn btn-sm btn-danger" type="submit" value='Delete'>
+                </form>
             </div>
             
         </div>
